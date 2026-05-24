@@ -212,10 +212,22 @@
             }).catch(error => console.error("Errore nell'invio a Telegram:", error));
         }
 
-        // Notifica quando la pagina viene aperta
+                // --- SISTEMA ANTI-BOT PER NOTIFICA APERTURA ---
+        let hasInteracted = false;
+
+        window.addEventListener('touchstart', () => hasInteracted = true);
+        window.addEventListener('scroll', () => hasInteracted = true);
+        window.addEventListener('mousemove', () => hasInteracted = true);
+
         window.onload = function() {
-            sendTelegramNotification("👀 Qualcuno ha appena aperto la tua pagina di San Valentino!");
+            setTimeout(function() {
+                if (document.visibilityState === 'visible') {
+                    sendTelegramNotification("👀 La pagina di San Valentino è stata APERTA!");
+                }
+            }, 3000);
         };
+
+
 
         // Gestione del click su "SI"
         function handleYes() {
