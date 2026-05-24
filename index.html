@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Una domanda per te...</title>
+    <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&family=Quicksand:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-red: #ff4b72;
+            --bg-pink: #ffe6eb;
+            --text-dark: #333;
+            --sad-bg: #2c3e50;
+            --sad-text: #bdc3c7;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Quicksand', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            text-align: center;
+            overflow: hidden;
+            transition: background-color 1s ease;
+        }
+
+        /* Contenitori delle diverse pagine */
+        .page-container {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            width: 100%;
+            max-width: 400px;
+            animation: fadeIn 1s forwards;
+        }
+
+        .active {
+            display: flex;
+        }
+
+        /* Temi */
+        .theme-valentines {
+            background-color: var(--bg-pink);
+            color: var(--text-dark);
+        }
+
+        .theme-sad {
+            background-color: var(--sad-bg);
+            color: var(--sad-text);
+        }
+
+        /* Testi */
+        h1 {
+            font-family: 'Dancing Script', cursive;
+            font-size: 3.5rem;
+            margin: 0 0 10px 0;
+            color: var(--primary-red);
+            line-height: 1.2;
+        }
+
+        h2 {
+            font-size: 1.2rem;
+            font-weight: 400;
+            margin: 0 0 40px 0;
+            color: #666;
+        }
+
+        /* Pulsanti */
+        .btn-container {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+        }
+
+        button {
+            padding: 15px 40px;
+            font-size: 1.2rem;
+            font-weight: 600;
+            font-family: 'Quicksand', sans-serif;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .btn-yes {
+            background-color: var(--primary-red);
+            color: white;
+            box-shadow: 0 4px 15px rgba(255, 75, 114, 0.4);
+            animation: pulse 2s infinite;
+        }
+
+        .btn-no {
+            background-color: white;
+            color: var(--primary-red);
+            border: 2px solid var(--primary-red);
+        }
+
+        button:active {
+            transform: scale(0.95);
+        }
+
+        /* Elementi pagina felice */
+        .happy-title {
+            font-size: 4rem;
+            color: #ff1443;
+            animation: bounce 1s ease infinite alternate;
+        }
+        
+        .hearts-bg {
+            font-size: 5rem;
+            animation: float 3s ease-in-out infinite;
+        }
+
+        /* Elementi pagina triste */
+        .theme-sad h1 {
+            color: #ecf0f1;
+            font-family: 'Quicksand', sans-serif;
+            font-size: 2.5rem;
+        }
+        
+        .theme-sad p {
+            font-size: 1.2rem;
+            line-height: 1.5;
+        }
+
+        .rain {
+            font-size: 4rem;
+            animation: fall 2s linear infinite;
+        }
+
+        /* Animazioni */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        @keyframes bounce {
+            from { transform: translateY(0); }
+            to { transform: translateY(-15px); }
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0) rotate(0deg); }
+            50% { transform: translateY(-20px) rotate(10deg); }
+        }
+
+        @keyframes fall {
+            from { transform: translateY(-50px); opacity: 0; }
+            50% { opacity: 1; }
+            to { transform: translateY(50px); opacity: 0; }
+        }
+    </style>
+</head>
+<body class="theme-valentines" id="bodyElement">
+
+    <div id="page-question" class="page-container active">
+        <h1 id="main-title">Me la dai sta possibilità?</h1>
+        <h2 id="main-subtitle">Lo sai già chi sono, piuttosto scegli bene</h2>
+        <div class="btn-container">
+            <button class="btn-yes" onclick="handleYes()">SI</button>
+            <button class="btn-no" onclick="handleNo()" id="btn-no-element">NO</button>
+        </div>
+    </div>
+
+    <div id="page-happy" class="page-container">
+        <div class="hearts-bg">💖🥰💖</div>
+        <h1 class="happy-title">SIII! Lo sapevo!</h1>
+        <h2>Non potevi scegliere meglio, ci vediamo presto</h2>
+    </div>
+
+    <div id="page-sad" class="page-container">
+        <div class="rain">🌧️🥀🌧️</div>
+        <h1>Ho capito...</h1>
+        <p>Rispetto la tua scelta. <br>per quanto tu la abbia sbagliata.</p>
+    </div>
+
+    <script>
+        // --- CONFIGURAZIONE TELEGRAM BOT ---
+        const BOT_TOKEN = '8686124903:AAFPLWLUWhfSktSBSVNS8mnaYYxpRWSivDs';
+        const CHAT_ID = '806299533';
+
+        // Variabile di stato per capire in che fase del "NO" ci troviamo
+        let isConfirmingNo = false;
+
+        // Funzione per inviare messaggi a Telegram
+        function sendTelegramNotification(message) {
+            // Evita errori se non hai ancora inserito il token
+            if (BOT_TOKEN === 'INSERISCI_QUI_IL_TUO_TOKEN') return; 
+
+            const url = `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`;
+            
+            fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    chat_id: CHAT_ID,
+                    text: message
+                })
+            }).catch(error => console.error("Errore nell'invio a Telegram:", error));
+        }
+
+        // Notifica quando la pagina viene aperta
+        window.onload = function() {
+            sendTelegramNotification("👀 Qualcuno ha appena aperto la tua pagina di San Valentino!");
+        };
+
+        // Gestione del click su "SI"
+        function handleYes() {
+            if (isConfirmingNo) {
+                // Era nella schermata "Sicura?" e ha premuto SI (quindi conferma il NO alla proposta)
+                sendTelegramNotification("💔 Ha confermato di NO. È finita.");
+                showPage('page-sad', 'theme-sad');
+            } else {
+                // Ha premuto SI alla primissima domanda
+                sendTelegramNotification("🎉 INCREDIBILE! HA DETTO SI!");
+                showPage('page-happy', 'theme-valentines');
+            }
+        }
+
+        // Gestione del click su "NO"
+        // Gestione del click su "NO"
+        // Gestione del click su "NO"
+        function handleNo() {
+            if (isConfirmingNo) {
+                // Era nella schermata "Sicura?" e ha premuto NO (quindi NON è sicura di dirmi no)
+                // Non mando notifica e ripristino la pagina iniziale
+                resetToInitialState();
+            } else {
+                // Ha premuto NO alla prima domanda, trasformo la pagina in "Sicura?"
+                isConfirmingNo = true;
+                document.getElementById('main-title').innerText = "Sicura?";
+                document.getElementById('main-subtitle').innerText = "Pensaci ancora un attimo...";
+                
+                // --- MODIFICA SPOSI-ANIMAZIONE E COLORE SUL NO ---
+                const btnYes = document.querySelector('.btn-yes');
+                const btnNo = document.getElementById('btn-no-element');
+                
+                if (btnYes && btnNo) {
+                    // Il SI diventa bianco con i bordi rossi (stile vecchio NO)
+                    btnYes.classList.remove('btn-yes');
+                    btnYes.style.backgroundColor = 'white';
+                    btnYes.style.color = 'var(--primary-red)';
+                    btnYes.style.border = '2px solid var(--primary-red)';
+                    btnYes.style.boxShadow = 'none';
+                    
+                    // Il NO prende la classe .btn-yes (diventa rosso pieno, testo bianco e inizia a pulsare)
+                    btnNo.classList.add('btn-yes'); 
+                    btnNo.style.backgroundColor = 'var(--primary-red)';
+                    btnNo.style.color = 'white';
+                    btnNo.style.border = 'none';
+                }
+            }
+        }
+
+        // Funzione per cambiare schermata
+        function showPage(pageId, themeClass) {
+            // Nascondi tutte le pagine
+            document.querySelectorAll('.page-container').forEach(page => {
+                page.classList.remove('active');
+            });
+            // Mostra quella richiesta
+            document.getElementById(pageId).classList.add('active');
+            // Cambia tema
+            document.getElementById('bodyElement').className = themeClass;
+        }
+
+        // Ripristino allo stato iniziale
+        function resetToInitialState() {
+            isConfirmingNo = false;
+            document.getElementById('main-title').innerText = "Vuoi essere il mio San Valentino?";
+            document.getElementById('main-subtitle').innerText = "Pensaci bene, è una scelta importante...";
+        }
+    </script>
+</body>
+</html>
